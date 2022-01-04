@@ -1,23 +1,40 @@
-#include "avr/interrupt"
-#include "avr/sleep.h"
+#include <EnergySaving.h>
+
+#define OUTPUT_LED 9
+#define INTERRUPT_PIN 8
+
+EnergySaving energySaving;
+
+bool interrupted = false;
+
 void setup() {
   // put your setup code here, to run once:
  Serial.begin(9600);
+ 
  pinMode(LED_BUILTIN, OUTPUT);
+ pinMode(OUTPUT_LED, OUTPUT);
+ pinMode(INTERRUPT_PIN, INPUT);
+ 
  digitalWrite(LED_BUILTIN, LOW);
+ digitalWrite(OUTPUT_LED, HIGH);
+
+ energySaving.begin(WAKE_EXT_INTERRUPT, INTERRUPT_PIN, interruptRoutine);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(9, HIGH);
   delay(100);
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(9, LOW);
   delay(100);
-  if (millis() > 5000) {
-    //Serial.print("time\n");
-    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-    sleep_enable();
-    sleep_cpu();
-    digitalWrite(LED_BUILTIN, HIGH);
+  if (millis() > 10000 && interrupted == false) {
+    energySaving.standby();
+    
+    
+    digitalWrite(9, HIGH);
   }
+  
 }
+
+void interruptRoutine() {
+    interrupted = true;
+  }
