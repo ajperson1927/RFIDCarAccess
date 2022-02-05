@@ -14,11 +14,11 @@
 //#define SDA_PIN 4     These are hardcoded pins. Included
 //#define SCL_PIN 5     for clarity only. Can't be set or changed
 
-
 int fobOnPeriod = 10000;
 unsigned long fobOnTime = 0;
 
 EnergySaving energySaving;
+Adafruit_PN532 pn532(IRQ_PIN, RESET_PIN);
 
 void setup() {
  
@@ -36,10 +36,27 @@ void setup() {
   while (!Serial);
 
   energySaving.begin(WAKE_EXT_INTERRUPT, INTERRUPT_PIN, interruptRoutine);
+  pn532.begin();
   
 }
 
 void loop() {
+
+  uint32_t versiondata = pn532.getFirmwareVersion();
+  if (!versiondata) {
+    Serial.print("PN532 not detected");
+    //while (1);
+  }
+  Serial.print((versiondata>>24) & 0xFF, HEX);
+
+  uint8_t success;
+  uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0};
+  uint8_t uidLength;
+  success = pn532.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  if (success) {
+    pn532.PrintHex(uid, uidLength);
+    Serial.println(uid[1]);
+  }
   
   if (millis() - fobOnTime > fobOnPeriod) {
     //digitalWrite(LED_BUILTIN, LOW);
