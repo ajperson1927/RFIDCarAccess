@@ -2,6 +2,7 @@
 #include <Adafruit_PN532.h>
 #include <SPI.h>
 #include <Wire.h> 
+#include <FlashAsEEPROM.h>
 
 #define FOB_UNLOCK_PIN 0
 #define FOB_LOCK_PIN 1
@@ -9,8 +10,8 @@
 #define FOB_POWER_PIN 7
 #define INTERRUPT_PIN 8
 
-#define IRQ_PIN 2
-#define RESET_PIN 3
+#define IRQ_PIN 3
+#define RESET_PIN 2
 //#define SDA_PIN 4     These are hardcoded pins. Included
 //#define SCL_PIN 5     for clarity only. Can't be set or changed
 
@@ -19,6 +20,7 @@ unsigned long fobOnTime = 0;
 
 EnergySaving energySaving;
 Adafruit_PN532 pn532(IRQ_PIN, RESET_PIN);
+
 
 void setup() {
  
@@ -41,13 +43,13 @@ void setup() {
 }
 
 void loop() {
-
   uint32_t versiondata = pn532.getFirmwareVersion();
   if (!versiondata) {
-    Serial.print("PN532 not detected");
+    Serial.println("PN532 not detected");
     //while (1);
   }
-  Serial.print((versiondata>>24) & 0xFF, HEX);
+  Serial.print("Version: ");
+  Serial.println((versiondata>>24) & 0xFF, HEX);
 
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0};
@@ -55,7 +57,7 @@ void loop() {
   success = pn532.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
   if (success) {
     pn532.PrintHex(uid, uidLength);
-    Serial.println(uid[1]);
+    //Serial.println(uid[1]);
   }
   
   if (millis() - fobOnTime > fobOnPeriod) {
@@ -65,7 +67,19 @@ void loop() {
 }
 
 void interruptRoutine() {
-  digitalWrite(LED_BUILTIN, HIGH);
-  Serial.println("INTERRUPTED");
+  //digitalWrite(LED_BUILTIN, HIGH);
+  //Serial.println("INTERRUPTED");
   fobOnTime = millis();
+}
+
+bool writeUIDToEEPROM(uint8_t uid[], uint8_t uidPosition) {
+  
+}
+
+bool readUIDFromEEPROM(uint8_t uid[], uint8_t uidPosition) {
+  
+}
+
+bool searchUIDInEEPROM(uint8_t uid[], uint8_t uidCount) {
+
 }
