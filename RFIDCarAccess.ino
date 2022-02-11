@@ -136,6 +136,40 @@ void loop()
       }
       break;
     }
+    case ADDMASTERTAG:
+    {
+      //New master tag being added. If any tag is scanned, set it to master tag and go back to idle state
+      if (validScan)
+      {
+        writeUIDIntoEEPROM(uid, 0);
+        systemState = IDLESTATE;
+      }
+      break;
+    }
+    case ADDNEWTAG:
+    {
+      if (validScan)
+      {
+        int uidIndex = searchUIDInEEPROM(uid);
+        //If master tag is scanned instead of a new tag, go to remove tag state
+        if (uidIndex == 0)
+        {
+          systemState = REMOVETAG;
+        } 
+        //If tag doesn't exist and isn't master tag, add it to the system
+        else if (uidIndex < 0)
+        {
+          addUIDIntoEEPROMList(uid);
+          systemState = IDLESTATE;
+        }
+        //If tag already exists, do nothing 
+        else
+        {
+          systemState = IDLESTATE;
+        }
+      }
+      break;
+    }
   }
 
   if (millis() - fobOnTime > fobOnPeriod) 
