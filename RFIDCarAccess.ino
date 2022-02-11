@@ -212,8 +212,10 @@ int searchUIDInEEPROM(uint8_t uid[])
   for (int i = 0; i < maxUIDCount; i++) 
   {
     uint8_t currentUID[maxUIDLength];
+    
     readUIDFromEEPROM(currentUID, i);
-
+    
+    if (uidsMatch(currentUID, clearUid)) return -1; //If scanned uid is empty, always reject it
     if (uidsMatch(currentUID, uid)) return i;
   }
   return -1;
