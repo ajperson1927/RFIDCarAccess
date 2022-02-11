@@ -96,8 +96,11 @@ void setup()
 void loop() 
 { 
   
+  //Creates an empty uid, then checks for a valid tag scan. If found, empty uid is set to that tag
   uint8_t uid[maxUIDLength];
+  memcpy(uid, clearUid, sizeof(uid));
   bool validScan = scanTag(uid);
+
 
   switch(systemState)
   {
@@ -105,18 +108,36 @@ void loop()
     {
       if (validScan)
       {
-        uint8_t masterUID[maxUIDLength];
-        readFromEEPROM(masterUID, 0);
-        if (uidsMatch(uid, masterUID)
+        //Find out if tag exists in EEPROM
+        int uidIndex = searchUIDInEEPROM(uid);
+
+        //If not, immediately exit
+        if (uidIndex < 0) 
+        {
+          break;
+        }
+        //If tag is master tag, go to the state for adding a new tag 
+        else if (uidIndex == 0) 
         {
           systemState = ADDNEWTAG;
+          break;
+        } 
+        //If tag exists and isn't master tag, power up the key fob and press unlock button
+        else 
+        {
+          systemState = COUNTDOWNSTATE;
+          digitalWrite(FOB_POWER_PIN, HIGH);
+          delay(100);
+          digitalWrite(FOB_UNLOCK_PIN, HIGH);
+          delay(100);
+          digitalWrite(FOB_UNLOCK_PIN, LOW);
           break;
         }
       }
       break;
     }
   }
-  
+
   if (millis() - fobOnTime > fobOnPeriod) 
   {
     //digitalWrite(LED_BUILTIN, LOW);
@@ -124,6 +145,7 @@ void loop()
   }
 
     //test code. halts loop until something is entered in serial monitor
+    /*
     Serial.flush();
     while (!Serial.available());
     while (Serial.available()) 
@@ -131,6 +153,7 @@ void loop()
       Serial.read();
     }
     Serial.flush();
+    */
 }
 
 void interruptRoutine() 
