@@ -62,7 +62,6 @@ void setup()
   while (!Serial);
 
   //energySaving.begin(WAKE_EXT_INTERRUPT, INTERRUPT_PIN, interruptRoutine);
-  pn532.begin();
   
   //If EEPROM doesn't exist yet, create and fill it with zeroes.
   //Set state to adding master tag
@@ -73,18 +72,19 @@ void setup()
     EEPROM.commit();
     systemState = ADDMASTERTAG;
   }
-}
 
-void loop() 
-{ /*
+  pn532.begin();
+  pn532.setPassiveActivationRetries(0); //Sets timeout to 0. Program will never halt waiting for tag scan
+  pn532.SAMConfig(); //Sets to read passive tags
+
+  //Prints firmware version. More for debugging purposes
   uint32_t versiondata = pn532.getFirmwareVersion();
   if (!versiondata) {
     Serial.println("PN532 not detected");
-    //while (1);
+    while (1);
   }
   Serial.print("Version: ");
   Serial.println((versiondata>>24) & 0xFF, HEX);
-  */
 
   //Creates an empty uid to copy from with memcpy
   for (int i = 0; i < maxUIDLength; i++)
@@ -93,6 +93,9 @@ void loop()
   }
 }
 
+void loop() 
+{ 
+  
   uint8_t uid[maxUIDLength];
   bool validScan = scanTag(uid);
 
