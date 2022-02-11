@@ -152,6 +152,7 @@ bool writeUIDIntoEEPROM(uint8_t uid[], uint8_t uidIndex)
     EEPROM.write(index + i, uid[i]);
   }
   EEPROM.commit();
+  Serial.println("WRITING TO EEPROM");
   return true;
 }
 
@@ -175,11 +176,11 @@ bool readUIDFromEEPROM(uint8_t uid[], uint8_t uidIndex)
 
 bool addUIDIntoEEPROMList(uint8_t uid[]) 
 {
-  int currentUIDCount = EEPROM.read(0);
-  if (currentUIDCount >= maxUIDCount + 1) return false;
+  int latestUIDIndex = EEPROM.read(0);
+  if (latestUIDIndex >= maxUIDCount) return false;
   
-  EEPROM.write(0, currentUIDCount + 1);
-  return writeUIDIntoEEPROM(uid, currentUIDCount);
+  EEPROM.write(0, latestUIDIndex + 1);
+  return writeUIDIntoEEPROM(uid, latestUIDIndex + 1);
 }
 
 //Removes given UID from the EEPROM, and shifts the UIDs after
@@ -200,6 +201,7 @@ bool removeUIDFromEEPROMList(uint8_t uid[])
      writeUIDIntoEEPROM(newUID, i);
   }
   EEPROM.write(0, uidIndex);
+  Serial.println("WRITING TO EEPROM");
   EEPROM.commit();
   return true;
 }
