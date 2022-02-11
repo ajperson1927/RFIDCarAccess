@@ -26,9 +26,8 @@ const int maxUIDLength = 7; //The max length a UID can be. Most tags are 4 or 7 
 const int maxUIDCount = 10; //The max amount of UIDs can be stored in the EEPROM. Not including the master tag
 const int firstUIDPosition = 1; //first UID after the master tag
 
-const int TAGSCANNED =      0;
-const int TAGWAITING =      1;
-const int TAGIDLE =         2;
+const int TAGWAITING =      0;
+const int TAGIDLE =         1;
 
 const int IDLESTATE =       0;
 const int CARONSTATE =      1;
@@ -41,6 +40,7 @@ const int CLEARALLTAGS =    6;
 int tagState = TAGIDLE;
 int systemState = IDLESTATE;
 bool newTag = false;
+uint8_t clearUid[maxUIDLength];
 
 EnergySaving energySaving;
 Adafruit_PN532 pn532(IRQ_PIN, RESET_PIN);
@@ -85,6 +85,13 @@ void loop()
   Serial.print("Version: ");
   Serial.println((versiondata>>24) & 0xFF, HEX);
   */
+
+  //Creates an empty uid to copy from with memcpy
+  for (int i = 0; i < maxUIDLength; i++)
+  {
+    clearUid[i] = 0;
+  }
+}
 
   uint8_t uid[maxUIDLength];
   bool validScan = scanTag(uid);
