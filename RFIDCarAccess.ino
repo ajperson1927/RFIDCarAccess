@@ -10,8 +10,8 @@
 #define FOB_POWER_PIN 7
 #define INTERRUPT_PIN 8
 
-#define IRQ_PIN 3
-#define RESET_PIN 2
+#define IRQ_PIN 2
+#define RESET_PIN 3
 //#define SDA_PIN 4     These are hardcoded pins. Included
 //#define SCL_PIN 5     for clarity only. Can't be set or changed
 
@@ -224,48 +224,39 @@ bool uidsMatch (uint8_t uid1[], uint8_t uid2[])
   return arraysMatch;
 }
 
+//Will scan tag and copy it to uid[] input. If tag was scanned within tagScanTime, ignore it
 bool scanTag(uint8_t uid[])
 {
-  uint8_t success;
-  uint8_t newUid[maxUIDLength];
-  uint8_t clearUid[] = {0,0,0,0,0,0,0};
-  uint8_t uidLength;
-  success = pn532.readPassiveTargetID(PN532_MIFARE_ISO14443A, newUid, &uidLength);
-
   switch (tagState)
   {
+    //Waiting for a tag scan
     case TAGIDLE:
     {
+      boolean success;
+      uint8_t newUid[maxUIDLength];//Input uid for pn532 scan. Will be set to scanned tag id
+      uint8_t uidLength; //Useless, but required by pn532 library
+      success = pn532.readPassiveTargetID(PN532_MIFARE_ISO14443A, &newUid[0], &uidLength);
       if (success) 
       {
-        tagState = TAGSCANNED;
-        uid = newUid;
-        digitalWrite(OUTPUT_LED, HIGH);
-        return true;
-        //pn532.PrintHex(uid, uidLength);
-        //Serial.println(uid[1]);
-      }
-    }
-    break;
-    
-    case TAGSCANNED:
-    {
-      if (!success)
-      {
+        //Tag was scanned. Enter waiting state and start timer. Copy scanned uid to input uid[]
         tagState = TAGWAITING;
+        memcpy(uid, newUid, sizeof(uid));
+        tagScanTime = millis();
+        digitalWrite(OUTPUT_LED, HIGH);
+        
+        return true;
       }
-      return false;
+      break;
     }
-    break;
-    
     case TAGWAITING:
-    {
       if (millis() - tagScanTime > tagScanWaitPeriod) 
       {
+        //If enough time has elapsed, enter idle state so tags can be scanned again
         tagState = TAGIDLE;
         digitalWrite(OUTPUT_LED, LOW);
       }
-    }
+      break;
+    default:
     break;
   }
   return false;
