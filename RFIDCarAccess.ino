@@ -9,6 +9,7 @@
 #define OUTPUT_LED 6
 #define FOB_POWER_PIN 7
 #define INTERRUPT_PIN 8
+#define CAR_POWER_PIN -1 //Temporary pin position. Will be changed once position is decided on board
 
 #define IRQ_PIN 2
 #define RESET_PIN 3
@@ -131,6 +132,7 @@ void loop()
           digitalWrite(FOB_UNLOCK_PIN, HIGH);
           delay(100);
           digitalWrite(FOB_UNLOCK_PIN, LOW);
+          fobOnTime = millis();
           break;
         }
       }
@@ -172,6 +174,21 @@ void loop()
     }
     case COUNTDOWNSTATE:
     {
+      //If a tag is scanned or time runs out, lock the car, turn off the fob, and return to idle state
+      if (validScan || (millis() - fobOnTime > fobOnPeriod))
+      {
+          digitalWrite(FOB_LOCK_PIN, HIGH);
+          delay(100);
+          digitalWrite(FOB_LOCK_PIN, LOW);
+          delay(100);
+          digitalWrite(FOB_POWER_PIN, LOW);
+          systemState = IDLESTATE;
+      } 
+      //If the car turns on, go to the car on state
+      else if (digitalRead(CAR_POWER_PIN))
+      {
+        systemState = CARONSTATE;
+      }
       break;
     }
   }
