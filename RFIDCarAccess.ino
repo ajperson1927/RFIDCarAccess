@@ -70,11 +70,7 @@ void setup()
   //If EEPROM doesn't exist yet, create and fill it with zeroes.
   //Set state to adding master tag
   if (!EEPROM.isValid()) { 
-    for (int i = 0; i <= (maxUIDCount + 2) * 7; i++) {
-      EEPROM.write(i, 0);
-    }
-    EEPROM.commit();
-    systemState = ADDMASTERTAG;
+    clearEEPROM();
   }
 
   pn532.begin();
@@ -224,6 +220,22 @@ void loop()
       else if (digitalRead(CAR_POWER_PIN))
       {
         systemState = CARONSTATE;
+      }
+      break;
+    }
+    case CLEARALLTAGS:
+    {
+      if (millis() - tagTimeoutTime > changeTagTimeout)
+      {
+        systemState = IDLESTATE;
+      }
+      if (validScan)
+      {
+        int uidIndex = searchUID(uid);
+        if (uidIndex == 0)
+        {
+          clearEEPROM();
+        }
       }
       break;
     }
@@ -388,4 +400,13 @@ bool scanTag(uint8_t uid[])
     break;
   }
   return false;
+}
+
+void clearEEPROM()
+{
+    for (int i = 0; i <= (maxUIDCount + 2) * 7; i++) {
+      EEPROM.write(i, 0);
+    }
+    EEPROM.commit();
+    systemState = ADDMASTERTAG;
 }
