@@ -109,7 +109,7 @@ void loop()
       if (validScan)
       {
         //Find out if tag exists in EEPROM
-        int uidIndex = searchUIDInEEPROM(uid);
+        int uidIndex = searchUID(uid);
 
         //If not, immediately exit
         if (uidIndex < 0) 
@@ -141,7 +141,7 @@ void loop()
       //New master tag being added. If any tag is scanned, set it to master tag and go back to idle state
       if (validScan)
       {
-        writeUIDIntoEEPROM(uid, 0);
+        changeUID(uid, 0);
         systemState = IDLESTATE;
       }
       break;
@@ -150,7 +150,7 @@ void loop()
     {
       if (validScan)
       {
-        int uidIndex = searchUIDInEEPROM(uid);
+        int uidIndex = searchUID(uid);
         //If master tag is scanned instead of a new tag, go to remove tag state
         if (uidIndex == 0)
         {
@@ -159,7 +159,7 @@ void loop()
         //If tag doesn't exist and isn't master tag, add it to the system
         else if (uidIndex < 0)
         {
-          addUIDIntoEEPROMList(uid);
+          addUID(uid);
           systemState = IDLESTATE;
         }
         //If tag already exists, do nothing 
@@ -204,7 +204,7 @@ void interruptRoutine()
 //This takes in a tag UID, writes it to the proper indexes
 //in the EEPROM derived from uidIndex, and commits the data.
 //Returns success status
-bool writeUIDIntoEEPROM(uint8_t uid[], uint8_t uidIndex) 
+bool changeUID(uint8_t uid[], uint8_t uidIndex) 
 {
   int index = (uidIndex) * maxUIDLength + 1;//calculate starting index
   
@@ -220,7 +220,7 @@ bool writeUIDIntoEEPROM(uint8_t uid[], uint8_t uidIndex)
 //This reads the tag UID from the proper indexes derived from
 //uidIndex, and writes it to the given uid[].
 //Returns success status
-bool readUIDFromEEPROM(uint8_t uid[], uint8_t uidIndex) 
+bool readUID(uint8_t uid[], uint8_t uidIndex) 
 {
   
   //If EEPROM doesn't exist yet, do nothing and return false
@@ -235,31 +235,31 @@ bool readUIDFromEEPROM(uint8_t uid[], uint8_t uidIndex)
   return true;
 }
 
-bool addUIDIntoEEPROMList(uint8_t uid[]) 
+bool addUID(uint8_t uid[]) 
 {
   int latestUIDIndex = EEPROM.read(0);
   if (latestUIDIndex >= maxUIDCount) return false;
   
   EEPROM.write(0, latestUIDIndex + 1);
-  return writeUIDIntoEEPROM(uid, latestUIDIndex + 1);
+  return changeUID(uid, latestUIDIndex + 1);
 }
 
 //Removes given UID from the EEPROM, and shifts the UIDs after
 //1 to the left 
-bool removeUIDFromEEPROMList(uint8_t uid[]) 
+bool removeUID(uint8_t uid[]) 
 {
   
   //Finds index of UID we're trying to remove. If it doesn't exist,
   //or is the master tag, do nothing and return false
-  int uidIndex = searchUIDInEEPROM(uid);
+  int uidIndex = searchUID(uid);
   if (uidIndex <= 0) return false;
 
   //Shifts every UID left, starting with the one after target UID
   for (int i = uidIndex; i < maxUIDCount; i++) 
   {
      uint8_t newUID[maxUIDLength];
-     readUIDFromEEPROM(newUID, i + 1);
-     writeUIDIntoEEPROM(newUID, i);
+     readUID(newUID, i + 1);
+     changeUID(newUID, i);
   }
   EEPROM.write(0, uidIndex);
   Serial.println("WRITING TO EEPROM");
@@ -269,23 +269,23 @@ bool removeUIDFromEEPROMList(uint8_t uid[])
 
 //Searches the EEPROM for given UID. If a match is found, 
 //it's index is returned. Otherwise a -1 is returned
-int searchUIDInEEPROM(uint8_t uid[]) 
+int searchUID(uint8_t uid[]) 
 {
   //iterate through all uids in list
   for (int i = 0; i < maxUIDCount; i++) 
   {
     uint8_t currentUID[maxUIDLength];
     
-    readUIDFromEEPROM(currentUID, i);
+    readUID(currentUID, i);
     
-    if (uidsMatch(currentUID, clearUid)) return -1; //If scanned uid is empty, always reject it
-    if (uidsMatch(currentUID, uid)) return i;
+    if (doUidsMatch(currentUID, clearUid)) return -1; //If scanned uid is empty, always reject it
+    if (doUidsMatch(currentUID, uid)) return i;
   }
   return -1;
 }
 
 //Compare given uids. Return whether they match or not. 
-bool uidsMatch (uint8_t uid1[], uint8_t uid2[])
+bool doUidsMatch (uint8_t uid1[], uint8_t uid2[])
 {
   bool arraysMatch = true;
   for (int i = 0; i < maxUIDLength; i++) 
