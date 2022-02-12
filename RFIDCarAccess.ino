@@ -239,6 +239,16 @@ void loop()
       }
       break;
     }
+    case CARONSTATE:
+    {
+      if (!digitalRead(CAR_POWER_PIN))
+      {
+        fobOnTime = millis();
+        systemState = COUNTDOWNSTATE;
+      }
+      
+      break;
+    }
   }
 
   if (millis() - fobOnTime > fobOnPeriod) 
