@@ -170,6 +170,10 @@ void loop()
       }
       break;
     }
+    case COUNTDOWNSTATE:
+    {
+      break;
+    }
   }
 
   if (millis() - fobOnTime > fobOnPeriod) 
