@@ -22,6 +22,9 @@ unsigned long fobOnTime;
 int tagScanWaitPeriod = 2000;
 unsigned long tagScanTime;
 
+int changeTagTimeout = 5000;
+unsigned long tagTimeoutTime;
+
 //variables for EEEPROM and UID handling
 const int maxUIDLength = 7; //The max length a UID can be. Most tags are 4 or 7 long
 const int maxUIDCount = 10; //The max amount of UIDs can be stored in the EEPROM. Not including the master tag
@@ -121,6 +124,7 @@ void loop()
         else if (uidIndex == 0) 
         {
           systemState = ADDNEWTAG;
+          tagTimeoutTime = millis();
           break;
         } 
         //If tag exists and isn't master tag, power up the key fob and press unlock button
@@ -150,12 +154,18 @@ void loop()
     }
     case ADDNEWTAG:
     {
+      if (millis() - tagTimeoutTime > changeTagTimeout)
+      {
+        systemState = IDLESTATE;
+      }
+      
       if (validScan)
       {
         int uidIndex = searchUID(uid);
         //If master tag is scanned instead of a new tag, go to remove tag state
         if (uidIndex == 0)
         {
+          tagTimeoutTime = millis();
           systemState = REMOVETAG;
         } 
         //If tag doesn't exist and isn't master tag, add it to the system
@@ -170,6 +180,32 @@ void loop()
           systemState = IDLESTATE;
         }
       }
+      break;
+    }
+    case REMOVETAG:
+    {
+      if (millis() - tagTimeoutTime > changeTagTimeout)
+      {
+        systemState = IDLESTATE;
+      }
+      if (validScan)
+      {
+        int uidIndex = searchUID(uid);
+        if (uidIndex == 0)
+        {
+          systemState = CLEARALLTAGS;
+        }
+        else if (uidIndex == -1)
+        {
+          systemState = IDLESTATE;
+        }
+        else
+        {
+          removeUID(uid);
+          systemState = IDLESTATE;
+        }
+      }
+      
       break;
     }
     case COUNTDOWNSTATE:
