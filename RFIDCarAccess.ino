@@ -122,6 +122,7 @@ void loop()
 
   switch(systemState)
   {
+    //Nothing is happening. Waiting for tag scan to do anything
     case IDLESTATE:
     {
       if (validScan)
@@ -160,6 +161,7 @@ void loop()
       }
       break;
     }
+    //Waiting for a tag to be scanned, then adding it as the master tag
     case ADDMASTERTAG:
     {
       //New master tag being added. If any tag is scanned, set it to master tag and go back to idle state
@@ -171,6 +173,7 @@ void loop()
       }
       break;
     }
+    //Waiting for a tag to be scanned, then adding it as an unlock tag
     case ADDNEWTAG:
     {
       //If timed out, go back to idle
@@ -207,6 +210,7 @@ void loop()
       }
       break;
     }
+    //Waiting for a tag to be scanned, then removing it as an unlock tag
     case REMOVETAG:
     {
       //If timed out, go back to idle
@@ -242,6 +246,7 @@ void loop()
       
       break;
     }
+    //Car is not turned on. Wait for it to turn on, or go back to idle
     case COUNTDOWNSTATE:
     {
       //If a tag is scanned or time runs out, lock the car, turn off the fob, and return to idle state
@@ -263,6 +268,7 @@ void loop()
       }
       break;
     }
+    //Waiting for master tag to be scanned, then resets everything to "factory settings"
     case CLEARALLTAGS:
     {
       //If timed out, go back to idle
@@ -282,6 +288,7 @@ void loop()
       }
       break;
     }
+    //Car is turned on. Don't do anything until it's turned off
     case CARONSTATE:
     {
       //If car turns off, go to countdown state
@@ -333,6 +340,7 @@ bool readUID(uint8_t uid[], uint8_t uidIndex)
   return true;
 }
 
+//This appends the given uid to the list. If max number hit, return false
 bool addUID(uint8_t uid[]) 
 {
   int latestUIDIndex = EEPROM.read(0);
@@ -434,6 +442,7 @@ bool scanTag(uint8_t uid[])
   }
   return false;
 }
+
 //Empty EEPROM and set state to adding master tag
 void clearEEPROM()
 {
@@ -445,6 +454,7 @@ void clearEEPROM()
     ledOnPeriod = ledOffPeriod = 1000;
     ledOnTime = ledOffTime = millis();
 }
+
 //Controls blinking of the status led
 void blinkLED() 
 {
