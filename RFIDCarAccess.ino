@@ -34,6 +34,11 @@ unsigned long tagScanTime;
 int changeTagTimeout = 5000; //How long must pass when adding/removing a tag before the action is auto cancelled
 unsigned long tagTimeoutTime;
 
+int ledOnPeriod = 1000;   //How long led should stay on/off when blinking
+unsigned long ledOnTime;
+int ledOffPeriod = 0;
+unsigned long ledOffTime;
+
 //variables for EEEPROM and UID handling
 const int maxUIDLength = 7; //The max length a UID can be. Most tags are 4 or 7 long
 const int maxUIDCount = 10; //The max amount of UIDs can be stored in the EEPROM. Not including the master tag
@@ -54,6 +59,11 @@ const int REMOVETAG =       5;
 const int CLEARALLTAGS =    6;
 int systemState = IDLESTATE; //Starting state
 
+//States for led blinking
+const int LEDON = 0;
+const int LEDOFF = 1;
+int ledState = LEDOFF;
+
 uint8_t clearUid[maxUIDLength]; //UID array full of zeroes
 
 EnergySaving energySaving;
@@ -70,6 +80,8 @@ void setup()
   pinMode(FOB_LOCK_PIN, OUTPUT);
   pinMode(CAR_POWER_PIN, INPUT);
 
+  digitalWrite(OUTPUT_LED, LOW);
+
   Serial.begin(9600); //Debug purposes only. Won't be needed when finished
   while (!Serial);
 
@@ -77,7 +89,7 @@ void setup()
   
   //If EEPROM doesn't exist yet, initialize it
   if (!EEPROM.isValid()) { 
-    clearEEPROM();
+    //clearEEPROM();
   }
 
   pn532.begin();
@@ -88,7 +100,7 @@ void setup()
   uint32_t versiondata = pn532.getFirmwareVersion();
   if (!versiondata) {
     Serial.println("PN532 not detected");
-    while (1);
+    //while (1);
   }
   Serial.print("Version: ");
   Serial.println((versiondata>>24) & 0xFF, HEX);
@@ -102,12 +114,11 @@ void setup()
 
 void loop() 
 { 
-  
+  blinkLED();
   //Creates an empty uid, then checks for a valid tag scan. If found, empty uid is set to that tag
   uint8_t uid[maxUIDLength];
   memcpy(uid, clearUid, sizeof(uid));
   bool validScan = scanTag(uid);
-
 
   switch(systemState)
   {
@@ -263,9 +274,8 @@ void loop()
       }
       break;
     }
-  }
+  } 
 }
-
 void interruptRoutine() 
 {
   //digitalWrite(LED_BUILTIN, HIGH);
@@ -410,4 +420,49 @@ void clearEEPROM()
     }
     EEPROM.commit();
     systemState = ADDMASTERTAG;
+}
+//Controls blinking of the status led
+void blinkLED() 
+{
+  //If it's supposed to be off for 0 seconds, set it to always on
+  if (ledOffPeriod == 0)
+  {
+    if (digitalRead(OUTPUT_LED) == HIGH) return;
+    
+    digitalWrite(OUTPUT_LED, HIGH);
+    return;
+  }
+  //If it's supposed to be on for 0 seconds, set it to always off
+  if (ledOnPeriod == 0)
+  {
+    if (digitalRead(OUTPUT_LED) == LOW) return;
+
+    digitalWrite(OUTPUT_LED, LOW);
+    return;
+  }
+  switch (ledState)
+  {
+    case LEDON:
+    {
+      //if led is on and time runs out, turn it off
+      if (millis() - ledOnTime > ledOnPeriod)
+      {
+        ledOffTime = millis();
+        ledState = LEDOFF;
+        digitalWrite(OUTPUT_LED, LOW);
+      }
+      break;
+    }
+    case LEDOFF:
+    { 
+      //if led is off and time runs out, turn it on
+      if (millis() - ledOffTime > ledOffPeriod)
+      {
+        ledOnTime = millis();
+        ledState = LEDON;
+        digitalWrite(OUTPUT_LED, HIGH);
+      }
+      break;
+    }
+  }
 }
