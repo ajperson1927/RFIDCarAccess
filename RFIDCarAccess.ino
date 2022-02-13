@@ -16,8 +16,8 @@
 #define FOB_LOCK_PIN 1
 #define OUTPUT_LED 6
 #define FOB_POWER_PIN 7
-#define INTERRUPT_PIN 8
-#define CAR_POWER_PIN -1 //Temporary pin position. Will be changed once position is decided on board
+//#define INTERRUPT_PIN 8
+#define CAR_POWER_PIN 8
 
 #define IRQ_PIN 2
 #define RESET_PIN 3
@@ -74,13 +74,16 @@ void setup()
  
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OUTPUT_LED, OUTPUT);
-  pinMode(INTERRUPT_PIN, INPUT);
   pinMode(FOB_POWER_PIN, OUTPUT);
   pinMode(FOB_UNLOCK_PIN, OUTPUT);
   pinMode(FOB_LOCK_PIN, OUTPUT);
-  //pinMode(CAR_POWER_PIN, INPUT);
+  pinMode(CAR_POWER_PIN, INPUT);
+  //pinMode(INTERRUPT_PIN, INPUT);
 
   digitalWrite(OUTPUT_LED, LOW);
+  digitalWrite(FOB_POWER_PIN, LOW);
+  digitalWrite(FOB_UNLOCK_PIN, LOW);
+  digitalWrite(FOB_LOCK_PIN, LOW);
 
   Serial.begin(9600); //Debug purposes only. Won't be needed when finished
   while (!Serial) delay(100);
