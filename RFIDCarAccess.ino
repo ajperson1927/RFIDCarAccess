@@ -139,18 +139,22 @@ void loop()
         {
           systemState = ADDNEWTAG;
           tagTimeoutTime = millis();
+          ledOnPeriod = 1000; ledOffPeriod = 300;
+          ledOnTime = ledOffTime = millis();
           break;
         } 
         //If tag exists and isn't master tag, power up the key fob and press unlock button
         else 
         {
-          systemState = COUNTDOWNSTATE;
           digitalWrite(FOB_POWER_PIN, HIGH);
           delay(100);
           digitalWrite(FOB_UNLOCK_PIN, HIGH);
           delay(100);
           digitalWrite(FOB_UNLOCK_PIN, LOW);
+          systemState = COUNTDOWNSTATE;
           fobOnTime = millis();
+          ledOnPeriod = 1000; ledOffPeriod = 1000;
+          ledOnTime = ledOffTime = millis();
           break;
         }
       }
@@ -163,6 +167,7 @@ void loop()
       {
         changeUID(uid, 0);
         systemState = IDLESTATE;
+        ledOnPeriod = 0; ledOffPeriod = 1;
       }
       break;
     }
@@ -172,6 +177,7 @@ void loop()
       if (millis() - tagTimeoutTime > changeTagTimeout)
       {
         systemState = IDLESTATE;
+        ledOnPeriod = 0; ledOffPeriod = 1;
       }
       
       if (validScan)
@@ -182,17 +188,21 @@ void loop()
         {
           tagTimeoutTime = millis();
           systemState = REMOVETAG;
+          ledOnPeriod = 300; ledOffPeriod = 1000;
+          ledOnTime = ledOffTime = millis();
         } 
         //If tag doesn't exist and isn't master tag, add it to the system
         else if (uidIndex < 0)
         {
           addUID(uid);
           systemState = IDLESTATE;
+          ledOnPeriod = 0; ledOffPeriod = 1;
         }
         //If tag already exists, do nothing 
         else
         {
           systemState = IDLESTATE;
+          ledOnPeriod = 0; ledOffPeriod = 1;
         }
       }
       break;
@@ -203,6 +213,7 @@ void loop()
       if (millis() - tagTimeoutTime > changeTagTimeout)
       {
         systemState = IDLESTATE;
+        ledOnPeriod = 0; ledOffPeriod = 1;
       }
       if (validScan)
       {
@@ -211,17 +222,21 @@ void loop()
         if (uidIndex == 0)
         {
           systemState = CLEARALLTAGS;
+          ledOnPeriod = ledOffPeriod = 300;
+          ledOnTime = ledOffTime = millis();
         }
         //If tag doesn't exist, return to idle state
         else if (uidIndex == -1)
         {
           systemState = IDLESTATE;
+          ledOnPeriod = 0; ledOffPeriod = 1;
         }
         //If tag exists, remove it and return to idle state
         else
         {
           removeUID(uid);
           systemState = IDLESTATE;
+          ledOnPeriod = 0; ledOffPeriod = 1;
         }
       }
       
@@ -238,11 +253,13 @@ void loop()
           delay(100);
           digitalWrite(FOB_POWER_PIN, LOW);
           systemState = IDLESTATE;
+          ledOnPeriod = 0; ledOffPeriod = 1;
       } 
       //If the car turns on, go to the car on state
       else if (digitalRead(CAR_POWER_PIN))
       {
         systemState = CARONSTATE;
+        ledOnPeriod = 1; ledOffPeriod = 0;
       }
       break;
     }
@@ -252,6 +269,7 @@ void loop()
       if (millis() - tagTimeoutTime > changeTagTimeout)
       {
         systemState = IDLESTATE;
+        ledOnPeriod = 0; ledOffPeriod = 1;
       }
       if (validScan)
       {
@@ -271,6 +289,8 @@ void loop()
       {
         fobOnTime = millis();
         systemState = COUNTDOWNSTATE;
+        ledOnPeriod = ledOffPeriod = 1000;
+        ledOnTime = ledOffTime = millis();
       }
       break;
     }
@@ -393,7 +413,8 @@ bool scanTag(uint8_t uid[])
         tagState = TAGWAITING;
         memcpy(uid, newUid, sizeof(uid));
         tagScanTime = millis();
-        digitalWrite(OUTPUT_LED, HIGH);
+        ledOnPeriod = 1;
+        ledOffPeriod = 0;
         
         return true;
       }
@@ -404,7 +425,8 @@ bool scanTag(uint8_t uid[])
       {
         //If enough time has elapsed, enter idle state so tags can be scanned again
         tagState = TAGIDLE;
-        digitalWrite(OUTPUT_LED, LOW);
+        ledOnPeriod = 0;
+        ledOffPeriod = 1;
       }
       break;
     default:
@@ -420,6 +442,8 @@ void clearEEPROM()
     }
     EEPROM.commit();
     systemState = ADDMASTERTAG;
+    ledOnPeriod = ledOffPeriod = 1000;
+    ledOnTime = ledOffTime = millis();
 }
 //Controls blinking of the status led
 void blinkLED() 
