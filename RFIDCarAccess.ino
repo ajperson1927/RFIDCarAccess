@@ -4,13 +4,13 @@
       using a simulated EEPROM in fllash storage. Due to it being flash storage, it resets every time the program is
       uploaded. 
       The EEPROM contains a simulated array to contain the tag UIDs. The first byte indicates the size of the array.
-      The rest is divided into maxUIDLength byte long UIDs. First one will always be the master tag
+      The rest is divided into maxUIDLength byte long UIDs. First one will always be the master tag.
 */
-#include <EnergySaving.h>
-#include <Adafruit_PN532.h>
+#include <EnergySaving.h>   //Comes with Seeeduino XIAO board library
+#include <Adafruit_PN532.h> //https://github.com/adafruit/Adafruit-PN532
 #include <SPI.h>
 #include <Wire.h> 
-#include <FlashAsEEPROM.h>
+#include <FlashAsEEPROM.h>  //https://github.com/cmaglie/FlashStorage
 
 #define FOB_UNLOCK_PIN 0
 #define FOB_LOCK_PIN 1
@@ -49,7 +49,7 @@ const int TAGWAITING =      0;
 const int TAGIDLE =         1;
 int tagState = TAGIDLE; //Starting state
 
-//Stated for the main operation of the system
+//States for the main operation of the system
 const int IDLESTATE =       0;
 const int CARONSTATE =      1;
 const int COUNTDOWNSTATE =  2;
@@ -78,12 +78,12 @@ void setup()
   pinMode(FOB_POWER_PIN, OUTPUT);
   pinMode(FOB_UNLOCK_PIN, OUTPUT);
   pinMode(FOB_LOCK_PIN, OUTPUT);
-  pinMode(CAR_POWER_PIN, INPUT);
+  //pinMode(CAR_POWER_PIN, INPUT);
 
   digitalWrite(OUTPUT_LED, LOW);
 
   Serial.begin(9600); //Debug purposes only. Won't be needed when finished
-  while (!Serial);
+  while (!Serial) delay(100);
 
   //energySaving.begin(WAKE_EXT_INTERRUPT, INTERRUPT_PIN, interruptRoutine);
   
